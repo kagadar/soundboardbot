@@ -23,33 +23,9 @@ func init() {
 	}}, deleteServer}
 }
 
-func deleteServer(s *discordgo.Session, event *discordgo.InteractionCreate) {
-	user, err := interactionUser(event)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	username := username(user)
-	if event.Type != discordgo.InteractionApplicationCommand {
-		glog.Errorf("unexpected event type received by delete server handler: %s", event.Type.String())
-		return
-	}
-	var guildID string
-	for _, option := range event.ApplicationCommandData().Options {
-		if option.Name != deleteServerIDOption {
-			continue
-		}
-		if option.Type != discordgo.ApplicationCommandOptionString {
-			glog.Errorf("unexpected option type for %q option: %s", deleteServerIDOption, option.Type.String())
-			return
-		}
-		guildID = option.StringValue()
-	}
-	if guildID == "" {
-		glog.Warning("received empty serverID, despite it being a required field")
-		return
-	}
-	if err := s.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+func deleteServer(s *discordgo.Session, interaction *discordgo.Interaction, user *discordgo.User, options map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+	guildID := options[deleteServerIDOption].StringValue()
+	if err := s.InteractionRespond(interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,
@@ -71,14 +47,14 @@ func deleteServer(s *discordgo.Session, event *discordgo.InteractionCreate) {
 	}
 	s.State.RUnlock()
 	if !owned {
-		if _, err := s.FollowupMessageCreate(event.Interaction, false, &discordgo.WebhookParams{
+		if _, err := s.FollowupMessageCreate(interaction, false, &discordgo.WebhookParams{
 			Content: fmt.Sprintf("I do not own server %q, so I cannot delete it.", guildID),
 		}); err != nil {
-			glog.Errorf("failed to notify %q of inability to complete delete request: %v", username, err)
+			glog.Errorf("failed to notify %q of inability to complete delete request: %v", user, err)
 		}
 		return
 	}
-	glog.Infof("delete guild %q request received from %q", guildID, username)
+	glog.Infof("delete guild %q request received from %q", guildID, user)
 	if _, err := s.GuildDelete(guildID); err != nil {
 		if !errors.Is(err, discordgo.ErrJSONUnmarshal) {
 			// DiscordGo incorrectly tries to unmarshal the response from the Guild Delete request.
@@ -87,11 +63,11 @@ func deleteServer(s *discordgo.Session, event *discordgo.InteractionCreate) {
 			return
 		}
 	}
-	if _, err := s.FollowupMessageCreate(event.Interaction, false, &discordgo.WebhookParams{
+	if _, err := s.FollowupMessageCreate(interaction, false, &discordgo.WebhookParams{
 		Content: fmt.Sprintf("%q has been deleted.", guildID),
 	}); err != nil {
-		glog.Errorf("failed to notify %q of completed delete request: %v", username, err)
+		glog.Errorf("failed to notify %q of completed delete request: %v", user, err)
 		return
 	}
-	glog.Infof("guild %q has been deleted by %q", guildID, username)
+	glog.Infof("guild %q has been deleted by %q", guildID, user)
 }

@@ -12,8 +12,10 @@ import (
 
 type command struct {
 	command *discordgo.ApplicationCommand
-	handler func(*discordgo.Session, *discordgo.InteractionCreate)
+	handler func(*discordgo.Session, *discordgo.Interaction, *discordgo.User, map[string]*discordgo.ApplicationCommandInteractionDataOption)
 }
+
+type token struct{}
 
 var (
 	accessToken = flag.String("discord_access_token", "", "Token used by the bot to access Discord")
@@ -53,7 +55,21 @@ func main() {
 			glog.Warningf("received command for unexpected interaction type: %q\n%+v", event.ApplicationCommandData().Name, event)
 			return
 		}
-		command.handler(s, event)
+		var user *discordgo.User
+		if event.User != nil {
+			user = event.User
+		} else {
+			if event.Member == nil {
+				glog.Errorf("interaction request recevied without any identified user: %+v", event)
+				return
+			}
+			user = event.Member.User
+		}
+		options := map[string]*discordgo.ApplicationCommandInteractionDataOption{}
+		for _, option := range event.ApplicationCommandData().Options {
+			options[option.Name] = option
+		}
+		command.handler(s, event.Interaction, user, options)
 	})
 	for _, handler := range extraHandlers {
 		s.AddHandler(handler)

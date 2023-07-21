@@ -12,14 +12,9 @@ func init() {
 	commands["list-servers"] = command{&discordgo.ApplicationCommand{Description: "Lists all servers that the bot owns"}, listServers}
 }
 
-func listServers(s *discordgo.Session, event *discordgo.InteractionCreate) {
-	user, err := interactionUser(event)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	username := username(user)
-	glog.Infof("list guilds request received from %q", username)
+func listServers(s *discordgo.Session, interaction *discordgo.Interaction, user *discordgo.User, options map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+	glog.Infof("list guilds request received from %q", user)
+
 	s.State.RLock()
 	var guilds []string
 	for _, guild := range s.State.Guilds {
@@ -28,13 +23,14 @@ func listServers(s *discordgo.Session, event *discordgo.InteractionCreate) {
 		}
 	}
 	s.State.RUnlock()
+
 	var content string
 	if len(guilds) == 0 {
 		content = "I do not own any servers."
 	} else {
 		content = strings.Join(guilds, "\n")
 	}
-	if err := s.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+	if err := s.InteractionRespond(interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Content: content,
@@ -44,5 +40,5 @@ func listServers(s *discordgo.Session, event *discordgo.InteractionCreate) {
 		glog.Errorf("failed to respond to interaction request: %v", err)
 		return
 	}
-	glog.Infof("sent guild list to %q", username)
+	glog.Infof("sent guild list to %q", user)
 }

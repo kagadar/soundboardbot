@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"soundboardbot/syncmap"
+	"strconv"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/golang/glog"
@@ -16,7 +18,7 @@ type usergrant struct {
 }
 
 const (
-	createSoundboardNameOption = "server_suffix"
+	createSoundboardSuffixOption = "server_suffix"
 )
 
 var (
@@ -32,7 +34,7 @@ func init() {
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionInteger,
-				Name:        createSoundboardNameOption,
+				Name:        createSoundboardSuffixOption,
 				Description: "The suffix to add to the created server",
 			},
 		},
@@ -40,16 +42,10 @@ func init() {
 	extraHandlers = append(extraHandlers, grantOwnership)
 }
 
-func createSoundboard(s *discordgo.Session, event *discordgo.InteractionCreate) {
-	user, err := interactionUser(event)
-	if err != nil {
-		glog.Error(err)
-		return
-	}
-	username := username(user)
-	glog.Infof("create guild request received from %q", username)
+func createSoundboard(s *discordgo.Session, interaction *discordgo.Interaction, user *discordgo.User, options map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+	glog.Infof("create guild request received from %q", user)
 
-	if err := s.InteractionRespond(event.Interaction, &discordgo.InteractionResponse{
+	if err := s.InteractionRespond(interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
 			Flags: discordgo.MessageFlagsEphemeral,
@@ -58,19 +54,22 @@ func createSoundboard(s *discordgo.Session, event *discordgo.InteractionCreate) 
 		glog.Errorf("failed to respond to interaction request: %v", err)
 		return
 	}
-	msg, err := s.FollowupMessageCreate(event.Interaction, true, &discordgo.WebhookParams{
+	msg, err := s.FollowupMessageCreate(interaction, true, &discordgo.WebhookParams{
 		Content: "Working...",
 	})
 	if err != nil {
 		glog.Errorf("failed to send follow-up message: %v", err)
 		return
 	}
-
-	guild, err := s.GuildCreateWithTemplate(*template, "soundboardhost", "")
+	var suffix string
+	if suffixValue := int(options[createSoundboardSuffixOption].IntValue()); suffixValue > 0 {
+		suffix = " " + strings.Join(strings.Split(strconv.Itoa(suffixValue), ""), " ")
+	}
+	guild, err := s.GuildCreateWithTemplate(*template, fmt.Sprintf("soundboardhost%s", suffix), "")
 	if err != nil {
 		glog.Errorf("failed to create guild: %v", err)
-		_, err := s.FollowupMessageEdit(event.Interaction, msg.ID, &discordgo.WebhookEdit{
-			Content: stringPtr("Failed to create Server"),
+		_, err := s.FollowupMessageEdit(interaction, msg.ID, &discordgo.WebhookEdit{
+			Content: toPtr("Failed to create Server"),
 		})
 		if err != nil {
 			glog.Errorf("failed to notify user of error: %v", err)
@@ -98,15 +97,15 @@ func createSoundboard(s *discordgo.Session, event *discordgo.InteractionCreate) 
 		return
 	}
 
-	_, err = s.FollowupMessageEdit(event.Interaction, msg.ID, &discordgo.WebhookEdit{
-		Content: stringPtr(fmt.Sprintf("https://discord.gg/%s", invite.Code)),
+	_, err = s.FollowupMessageEdit(interaction, msg.ID, &discordgo.WebhookEdit{
+		Content: toPtr(fmt.Sprintf("https://discord.gg/%s", invite.Code)),
 	})
 	if err != nil {
 		glog.Errorf("failed to update follow-up message: %v", err)
 		return
 	}
 
-	glog.Infof("waiting for %q to take over %q", username, guild.ID)
+	glog.Infof("waiting for %q to take over %q", user, guild.ID)
 	<-done
 
 	glog.Infof("leaving guild %q", guild.ID)
@@ -117,7 +116,7 @@ func createSoundboard(s *discordgo.Session, event *discordgo.InteractionCreate) 
 	}
 	glog.Infof("left guild %q", guild.ID)
 
-	if err := s.FollowupMessageDelete(event.Interaction, msg.ID); err != nil {
+	if err := s.FollowupMessageDelete(interaction, msg.ID); err != nil {
 		glog.Errorf("failed to delete message: %v", err)
 		return
 	}
@@ -132,9 +131,7 @@ func grantOwnership(s *discordgo.Session, event *discordgo.GuildMemberAdd) {
 		return
 	}
 
-	username := username(event.User)
-
-	glog.Infof("%q has joined %q, granting ownership", username, event.GuildID)
+	glog.Infof("%q has joined %q, granting ownership", event.User, event.GuildID)
 	defer func() { grant.done <- token{} }()
 
 	if err := s.GuildMemberRoleAdd(event.GuildID, grant.user, grant.role); err != nil {
@@ -143,5 +140,5 @@ func grantOwnership(s *discordgo.Session, event *discordgo.GuildMemberAdd) {
 	if _, err := s.GuildEdit(event.GuildID, &discordgo.GuildParams{OwnerID: grant.user}); err != nil {
 		glog.Errorf("failed to change guild owner: %v", err)
 	}
-	glog.Infof("%q has taken ownership of %q", username, event.GuildID)
+	glog.Infof("%q has taken ownership of %q", event.User, event.GuildID)
 }
