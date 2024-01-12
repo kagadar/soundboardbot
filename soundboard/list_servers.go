@@ -1,28 +1,41 @@
 package soundboard
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/golang/glog"
+	"k8s.io/klog/v2"
+)
+
+const (
+	listServerCommand = "list-servers"
 )
 
 func (b *bot) initListServers() {
-	b.commands["list-servers"] = command{&discordgo.ApplicationCommand{Description: "Lists all servers that the bot owns"}, b.listServers}
+	b.commands[listServerCommand] = command{
+		&discordgo.ApplicationCommand{
+			Description: "Lists all servers that the bot owns",
+		}, b.listServers}
 }
 
-func (b *bot) listServers(interaction *discordgo.Interaction, user *discordgo.User, options map[string]*discordgo.ApplicationCommandInteractionDataOption) error {
-	glog.Infof("list guilds request received from %q", user)
-
-	b.soundboard.State.RLock()
-	var guilds []string
-	for _, guild := range b.soundboard.State.Guilds {
-		if guild.OwnerID == b.soundboard.State.User.ID {
-			guilds = append(guilds, fmt.Sprintf("%q (%s)", guild.Name, guild.ID))
-		}
+func (b *bot) listServers(ctx context.Context, interaction *discordgo.Interaction, user *discordgo.User, options map[string]*discordgo.ApplicationCommandInteractionDataOption, followup *discordgo.Message) error {
+	if err := b.validateUser(user, listServerCommand); err != nil {
+		return err
 	}
-	b.soundboard.State.RUnlock()
+
+	klog.Infof("list guilds request received from %q", user)
+	var guilds []string
+	func() {
+		b.creator.State.RLock()
+		defer b.creator.State.RUnlock()
+		for _, guild := range b.creator.State.Guilds {
+			if guild.OwnerID == b.creator.State.User.ID {
+				guilds = append(guilds, fmt.Sprintf("%q (%s)", guild.Name, guild.ID))
+			}
+		}
+	}()
 
 	var content string
 	if len(guilds) == 0 {
@@ -30,15 +43,11 @@ func (b *bot) listServers(interaction *discordgo.Interaction, user *discordgo.Us
 	} else {
 		content = strings.Join(guilds, "\n")
 	}
-	if err := b.soundboard.InteractionRespond(interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: content,
-			Flags:   discordgo.MessageFlagsEphemeral,
-		},
+	if _, err := b.manager.FollowupMessageEdit(interaction, followup.ID, &discordgo.WebhookEdit{
+		Content: toPtr(content),
 	}); err != nil {
-		return fmt.Errorf("failed to respond to interaction request: %w", err)
+		return fmt.Errorf("%w: failed to notify %q of completed list request", err, user)
 	}
-	glog.Infof("sent guild list to %q", user)
+	klog.Infof("sent guild list to %q", user)
 	return nil
 }

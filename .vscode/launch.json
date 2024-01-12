@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Package",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}",
+            "args": [
+                "--alsologtostderr",
+                "-creator_access_token=${input:creatorToken}",
+                "-manager_access_token=${input:managerToken}"
+            ],
+        },
+    ],
+    "inputs": [
+        {
+            "id": "creatorToken",
+            "type": "command",
+            "command": "shellCommand.execute",
+            "args": {
+                "command": "more ..\\creator_discord_token.txt",
+                "useSingleResult": "skip",
+            },
+        },
+        {
+            "id": "managerToken",
+            "type": "command",
+            "command": "shellCommand.execute",
+            "args": {
+                "command": "more ..\\manager_discord_token.txt",
+                "useSingleResult": "skip",
+            },
+        },
+    ],
+}
