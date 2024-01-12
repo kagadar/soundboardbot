@@ -81,7 +81,7 @@ func (b *bot) inviteCommand(ctx context.Context, interaction *discordgo.Interact
 	for guildID := range guildIDs {
 		if _, err := b.manager.GuildMember(guildID, user.ID); err != nil {
 			actual := &discordgo.RESTError{}
-			if !errors.As(err, actual) {
+			if !errors.As(err, &actual) {
 				return fmt.Errorf("%w: failed to look up membership of %q in %q", err, user, guildID)
 			}
 			if actual.Message.Message == "Unknown Member" {

@@ -36,13 +36,13 @@ func (db *db) DeleteSoundboard(ctx context.Context, guildID discordgo.Snowflake)
 }
 
 func (db *db) FindAllSoundboardRoles(ctx context.Context, filter set.Set[discordgo.Snowflake]) (map[discordgo.Snowflake]set.Set[discordgo.Snowflake], error) {
-	rows, err := db.db.QueryContext(ctx, `
+	rows, err := db.db.QueryContext(ctx, fmt.Sprintf(`
 		SELECT s.GuildID, s.RoleID
 		FROM AutoRoles AS a
 			INNER JOIN SoundboardRoles AS s
 				USING (TemplateRoleName)
-		WHERE a.RoleID IN (?);
-	`, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ","))
+		WHERE a.RoleID IN (%s);
+	`, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to find soundboard roles", err)
 	}
@@ -63,13 +63,13 @@ func (db *db) FindAllSoundboardRoles(ctx context.Context, filter set.Set[discord
 }
 
 func (db *db) FindSoundboardRoles(ctx context.Context, guildID discordgo.Snowflake, filter set.Set[discordgo.Snowflake]) (set.Set[discordgo.Snowflake], error) {
-	rows, err := db.db.QueryContext(ctx, `
+	rows, err := db.db.QueryContext(ctx, fmt.Sprintf(`
 		SELECT s.RoleID
 		FROM AutoRoles AS a
 			INNER JOIN SoundboardRoles AS s
 				USING (TemplateRoleName)
-		WHERE s.GuildID = ? AND a.RoleID IN (?);
-	`, guildID, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ","))
+		WHERE s.GuildID = %s AND a.RoleID IN (%s);
+	`, guildID, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to find soundboard roles", err)
 	}

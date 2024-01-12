@@ -2,7 +2,7 @@ module github.com/kagadar/soundboardbot
 
 go 1.21.6
 
-replace github.com/bwmarrin/discordgo => H:\discordgo
+replace github.com/bwmarrin/discordgo => github.com/kagadar/discordgo v0.0.0-20240112073418-a323fa32b736
 
 require (
 	github.com/bwmarrin/discordgo v0.27.1
