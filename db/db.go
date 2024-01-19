@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kagadar/go-pipeline"
+	"github.com/kagadar/go-pipeline/maps"
 	"github.com/kagadar/go-set"
 	_ "modernc.org/sqlite"
 )
@@ -42,7 +42,7 @@ func (db *db) FindAllSoundboardRoles(ctx context.Context, filter set.Set[discord
 			INNER JOIN SoundboardRoles AS s
 				USING (TemplateRoleName)
 		WHERE a.RoleID IN (%s);
-	`, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
+	`, strings.Join(maps.ToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to find soundboard roles", err)
 	}
@@ -69,7 +69,7 @@ func (db *db) FindSoundboardRoles(ctx context.Context, guildID discordgo.Snowfla
 			INNER JOIN SoundboardRoles AS s
 				USING (TemplateRoleName)
 		WHERE s.GuildID = %s AND a.RoleID IN (%s);
-	`, guildID, strings.Join(pipeline.MapToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
+	`, guildID, strings.Join(maps.ToSlice(filter, func(k discordgo.Snowflake, _ set.Empty) string { return string(k) }), ",")))
 	if err != nil {
 		return nil, fmt.Errorf("%w: failed to find soundboard roles", err)
 	}

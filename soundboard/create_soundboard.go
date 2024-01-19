@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/kagadar/go-pipeline/channels"
 	"k8s.io/klog/v2"
 )
 
@@ -71,7 +72,7 @@ func (b *bot) createSoundboard(ctx context.Context, interaction *discordgo.Inter
 		return fmt.Errorf("failed to update follow-up message: %w", err)
 	}
 	klog.Infof("creator waiting for %q to join %q", user, guild.ID)
-	if err := await(ctx, doneInvite); err != nil {
+	if err, _, _ := channels.Await(ctx, doneInvite); err != nil {
 		return fmt.Errorf("%w: failed to wait for %q to join %q", err, user, guild.ID)
 	}
 	klog.Infof("creator requesting authorization for manager in %q", guild.ID)
@@ -84,7 +85,7 @@ func (b *bot) createSoundboard(ctx context.Context, interaction *discordgo.Inter
 		return fmt.Errorf("failed to send dm to %q: %w", user.ID, err)
 	}
 	klog.Infof("creator waiting for authorization for manager in %q", guild.ID)
-	if err := await(ctx, doneTransfer); err != nil {
+	if err, _, _ := channels.Await(ctx, doneTransfer); err != nil {
 		return fmt.Errorf("%w: failed to wait for %q to authorize manager in %q", err, user, guild.ID)
 	}
 	if err := b.manager.ChannelMessageDelete(dm.ID, authMsg.ID); err != nil {

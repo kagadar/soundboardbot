@@ -6,10 +6,13 @@ replace github.com/bwmarrin/discordgo => github.com/kagadar/discordgo v0.0.0-202
 
 require (
 	github.com/bwmarrin/discordgo v0.27.1
-	github.com/kagadar/go-pipeline v0.0.0-20240107071318-47297013b575
-	github.com/kagadar/go-set v0.0.0-20240107091526-47dd18060b9c
+	github.com/kagadar/go-pipeline/api v0.0.0-20240119233248-d96704cc4f8e
+	github.com/kagadar/go-pipeline/channels v0.0.0-20240119233248-d96704cc4f8e
+	github.com/kagadar/go-pipeline/maps v0.0.0-20240119230533-e851743e3a69
+	github.com/kagadar/go-pipeline/slices v0.0.0-20240119230533-e851743e3a69
+	github.com/kagadar/go-set v0.0.0-20240119232532-44ca55b13522
 	github.com/kagadar/go-syncmap v0.0.0-20240106050619-1e72809805a4
-	k8s.io/klog/v2 v2.110.1
+	k8s.io/klog/v2 v2.120.1
 	modernc.org/sqlite v1.28.0
 )
 
@@ -22,15 +25,14 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	golang.org/x/crypto v0.18.0 // indirect
-	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sys v0.16.0 // indirect
-	golang.org/x/tools v0.16.1 // indirect
+	golang.org/x/tools v0.17.0 // indirect
 	lukechampine.com/uint128 v1.3.0 // indirect
 	modernc.org/cc/v3 v3.41.0 // indirect
 	modernc.org/ccgo/v3 v3.16.15 // indirect
-	modernc.org/libc v1.40.1 // indirect
+	modernc.org/libc v1.40.5 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/opt v0.1.3 // indirect

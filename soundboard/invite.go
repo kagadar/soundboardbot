@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/kagadar/go-pipeline/channels"
 	"github.com/kagadar/go-syncmap"
 	"k8s.io/klog/v2"
 )
@@ -99,7 +100,7 @@ func (b *bot) inviteCommand(ctx context.Context, interaction *discordgo.Interact
 					return fmt.Errorf("%w: failed to notify %q of invite request", err, user)
 				}
 				klog.Infof("waiting for %q to join %q", user, guild.ID)
-				if err := await(ctx, done); err != nil {
+				if err, _, _ := channels.Await(ctx, done); err != nil {
 					return fmt.Errorf("%w: failed to wait for %q to join %q", err, user, guild.ID)
 				}
 			}

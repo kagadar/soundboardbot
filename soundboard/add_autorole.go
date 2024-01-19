@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/kagadar/go-pipeline"
+	"github.com/kagadar/go-pipeline/slices"
 	"k8s.io/klog/v2"
 )
 
@@ -31,7 +31,7 @@ func (b *bot) initAddAutorole() {
 					Name:        templateRoleNameOption,
 					Description: "The Name of the Role in the Soundboard Template which members in this AutoRole will be assigned to",
 					Required:    true,
-					Choices: pipeline.TransformSlice(b.roles.Elements(), func(r string) *discordgo.ApplicationCommandOptionChoice {
+					Choices: slices.Transform(b.roles.Elements(), func(r string) *discordgo.ApplicationCommandOptionChoice {
 						return &discordgo.ApplicationCommandOptionChoice{Name: r, Value: r}
 					}),
 				},

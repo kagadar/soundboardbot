@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/kagadar/go-pipeline/api"
 	"github.com/kagadar/go-set"
 	"k8s.io/klog/v2"
 )
@@ -70,8 +71,12 @@ func (b *bot) initialiseDBCommand(ctx context.Context, interaction *discordgo.In
 			if err != nil {
 				return err
 			}
-			ugs, err := queryAll(func(last *discordgo.UserGuild) ([]*discordgo.UserGuild, error) {
-				return b.manager.UserGuilds(200, "", last.ID)
+			ugs, err := api.Paginate(func(last *discordgo.UserGuild) ([]*discordgo.UserGuild, error) {
+				var id discordgo.Snowflake
+				if last != nil {
+					id = last.ID
+				}
+				return b.manager.UserGuilds(200, "", id)
 			})
 			if err != nil {
 				return err
